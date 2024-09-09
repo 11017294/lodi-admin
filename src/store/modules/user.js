@@ -28,7 +28,7 @@ const mutations = {
 }
 
 const actions = {
-  // user login
+  // 用户登录
   login({ commit }, userInfo) {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
@@ -43,7 +43,7 @@ const actions = {
     })
   },
 
-  // get user info
+  // 获取用户信息
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
       getInfo(state.token).then(response => {
@@ -64,11 +64,11 @@ const actions = {
     })
   },
 
-  // user logout
+  // 退出登录
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
       logout(state.token).then(() => {
-        removeToken() // must remove  token  first
+        removeToken() // 必须先移除令牌
         resetRouter()
         commit('RESET_STATE')
         resolve()
@@ -78,10 +78,10 @@ const actions = {
     })
   },
 
-  // remove token
+  // 移除令牌
   resetToken({ commit }) {
     return new Promise(resolve => {
-      removeToken() // must remove  token  first
+      removeToken() // 必须先移除令牌
       commit('RESET_STATE')
       resolve()
     })

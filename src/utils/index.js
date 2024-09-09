@@ -1,9 +1,5 @@
 /**
- * Created by PanJiaChen on 16/11/18.
- */
-
-/**
- * Parse the time to string
+ * 将时间解析为字符串
  * @param {(Object|string|number)} time
  * @param {string} cFormat
  * @returns {string | null}
@@ -42,16 +38,18 @@ export function parseTime(time, cFormat) {
     s: date.getSeconds(),
     a: date.getDay()
   }
-  const time_str = format.replace(/{([ymdhisa])+}/g, (result, key) => {
+  return format.replace(/{([ymdhisa])+}/g, (result, key) => {
     const value = formatObj[key]
     // Note: getDay() returns 0 on Sunday
-    if (key === 'a') { return ['日', '一', '二', '三', '四', '五', '六'][value ] }
+    if (key === 'a') {
+      return ['日', '一', '二', '三', '四', '五', '六'][value]
+    }
     return value.toString().padStart(2, '0')
   })
-  return time_str
 }
 
 /**
+ * 格式化时间
  * @param {number} time
  * @param {string} option
  * @returns {string}
@@ -70,7 +68,6 @@ export function formatTime(time, option) {
   if (diff < 30) {
     return '刚刚'
   } else if (diff < 3600) {
-    // less 1 hour
     return Math.ceil(diff / 60) + '分钟前'
   } else if (diff < 3600 * 24) {
     return Math.ceil(diff / 3600) + '小时前'
@@ -95,6 +92,7 @@ export function formatTime(time, option) {
 }
 
 /**
+ * 获取 URL 参数对象
  * @param {string} url
  * @returns {Object}
  */
@@ -109,8 +107,7 @@ export function param2Obj(url) {
     const index = v.indexOf('=')
     if (index !== -1) {
       const name = v.substring(0, index)
-      const val = v.substring(index + 1, v.length)
-      obj[name] = val
+      obj[name] = v.substring(index + 1, v.length)
     }
   })
   return obj
