@@ -1,0 +1,120 @@
+<template>
+  <div id="container" style="width: 100%; height: 300px" />
+</template>
+
+<script>
+import * as echarts from 'echarts'
+import { getArticleContributeCount } from '@/api'
+
+export default {
+  mounted() {
+    this.initDate()
+  },
+  created() {
+
+  },
+  methods: {
+    initDate: function() {
+      getArticleContributeCount().then(response => {
+        const contributeDate = response.data.dateRange
+        const noteContributeCount = response.data.contributeCount
+        const chart = echarts.init(document.getElementById('container'))
+        const option = {
+          // 设置背景
+          title: {
+            top: 30,
+            text: '文章贡献度',
+            subtext: '一年内文章提交的数量',
+            left: 'center',
+            textStyle: {
+              color: '#000'
+            }
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter(params) {
+              return (params.data[0] + '<br>文章数：' + params.data[1])
+            }
+          },
+          legend: {
+            top: '30',
+            left: '100',
+            data: ['文章数', 'Top 12'],
+            textStyle: {
+              // 设置字体颜色
+              color: '#000'
+            }
+          },
+          calendar: [{
+            top: 100,
+            left: 'center',
+            range: contributeDate,
+            splitLine: {
+              show: false, // 不显示
+              lineStyle: {
+                // 设置月份分割线的颜色
+                color: '#ffffff',
+                width: 1,
+                type: 'solid'
+              }
+            },
+            yearLabel: { show: false },
+            dayLabel: {
+              nameMap: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'], // 设置中文显示
+              textStyle: {
+                // 设置周显示颜色
+                color: '#000'
+              },
+              firstDay: 1 // 从周一开始
+            },
+            monthLabel: {
+              nameMap: 'cn', // 设置中文显示
+              textStyle: {
+                // 设置月显示颜色
+                color: '#000'
+              }
+            },
+            itemStyle: {
+              normal: {
+                // 设置背景颜色
+                color: '#EBEDF0',
+                borderWidth: 1,
+                // 设置方块分割线段颜色
+                borderColor: '#ffffff'
+              }
+            }
+          }],
+          series: [
+            {
+              name: '文章数',
+              type: 'scatter',
+              coordinateSystem: 'calendar',
+              data: noteContributeCount,
+              // 根据值设置原点大小
+              symbolSize(val) {
+                if (val[1] === 0) {
+                  return val[1]
+                } else {
+                  let size = 8 + val[1] * 2
+                  if (size > 18) {
+                    size = 18
+                  }
+                  return size
+                }
+              },
+              itemStyle: {
+                normal: {
+                  // 设置圆点颜色
+                  color: '#9BE9A8'
+                }
+              }
+            }
+          ]
+        }
+        chart.setOption(option)
+      })
+    }
+  }
+}
+
+</script>
