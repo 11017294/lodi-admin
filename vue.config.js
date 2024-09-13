@@ -35,7 +35,16 @@ module.exports = {
       warnings: false,
       errors: true
     },
-    before: require('./mock/mock-server.js')
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8080', // 这里填写项目真实的后台接口地址
+        changOrigin: true, // 设置允许跨域
+        pathRewrite: {
+          '^/api': ''
+        }
+      }
+    }
+    // ,before: require('./mock/mock-server.js')
   },
   configureWebpack: {
     // 在webpack的name字段中提供应用的标题，这样就可以在index.html中访问它以注入正确的标题

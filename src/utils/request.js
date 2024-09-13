@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { MessageBox, Message } from 'element-ui'
 import store from '@/store'
-import { getToken } from '@/utils/auth'
+import { getToken, getTokenName } from '@/utils/auth'
 
 // 创建一个axios实例
 const service = axios.create({
@@ -15,7 +15,7 @@ service.interceptors.request.use(
   config => {
     if (store.getters.token) {
       // 让每个请求都携带令牌
-      config.headers['X-Token'] = getToken()
+      config.headers[getTokenName()] = getToken()
     }
     return config
   },
@@ -39,8 +39,8 @@ service.interceptors.response.use(
   response => {
     const res = response.data
 
-    // 如果状态码不是20000，则判断为错误
-    if (res.code !== 20000) {
+    // 如果状态码不是0，则判断为错误
+    if (res.code !== 0) {
       Message({
         message: res.message || 'Error',
         type: 'error',
