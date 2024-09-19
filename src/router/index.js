@@ -59,6 +59,18 @@ export const constantRoutes = [
  */
 export const asyncRoutes = [
   {
+    path: '/article',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'Article',
+        component: () => import('@/views/article/article'),
+        meta: { title: '文章管理', icon: 'el-icon-tickets' }
+      }
+    ]
+  },
+  {
     path: 'external-link',
     component: Layout,
     meta: { title: '链接', icon: 'link' },
