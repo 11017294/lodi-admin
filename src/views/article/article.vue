@@ -43,13 +43,13 @@
           </el-select>
 
           <el-select
-            v-model="queryParams.isPublish"
+            v-model="queryParams.vipArticle"
             class="filter-item"
             clearable
-            placeholder="发布状态"
+            placeholder="vip文章"
           >
-            <el-option value="1" label="已发布" />
-            <el-option value="0" label="未发布" />
+            <el-option :value="1" label="vip文章" />
+            <el-option :value="0" label="普通文章" />
           </el-select>
 
           <el-select
@@ -58,18 +58,18 @@
             clearable
             placeholder="评论状态"
           >
-            <el-option value="1" label="允许评论" />
-            <el-option value="0" label="不可评论" />
+            <el-option :value="1" label="允许评论" />
+            <el-option :value="0" label="不可评论" />
           </el-select>
 
           <el-select
-            v-model="queryParams.vipArticle"
+            v-model="queryParams.isPublish"
             class="filter-item"
             clearable
-            placeholder="vip文章"
+            placeholder="发布状态"
           >
-            <el-option value="1" label="vip文章" />
-            <el-option value="0" label="普通文章" />
+            <el-option :value="1" label="已发布" />
+            <el-option :value="0" label="未发布" />
           </el-select>
 
           <el-select
@@ -78,9 +78,9 @@
             clearable
             placeholder="审核状态"
           >
-            <el-option value="0" label="未审核" />
-            <el-option value="1" label="审核通过" />
-            <el-option value="2" label="审核不通过" />
+            <el-option :value="0" label="未审核" />
+            <el-option :value="1" label="审核通过" />
+            <el-option :value="2" label="审核不通过" />
           </el-select>
         </div>
         <div>
@@ -94,7 +94,7 @@
           <el-button
             class="filter-item"
             type="info"
-            @click="resetForm"
+            @click="resetQueryForm"
           >重置</el-button>
         </div>
       </el-form>
@@ -117,7 +117,6 @@
         <template slot-scope="scope">
           <el-tag
             v-for="(item, index) in scope.row.tagsList"
-            v-if="item"
             :key="index"
             style="margin-left: 3px"
             type="warning"
@@ -167,7 +166,7 @@
       <el-table-column label="创建时间" width="200" align="center" prop="createTime" />
       <el-table-column label="操作" min-width="150" fixed="right">
         <template slot-scope="scope">
-          <el-button type="warning" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button type="warning" size="small" @click="openEditBox(scope.row)">编辑</el-button>
           <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -184,6 +183,58 @@
         @size-change="handleSizeChange"
       />
     </div>
+
+    <!-- 添加或修改用户配置对话框 -->
+    <el-dialog :title="editBox.title" :visible.sync="editBox.open" width="600px" append-to-body>
+      <el-form ref="form" :model="editBox.form" :rules="editBox.rules" label-width="80px">
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="editBox.form.title" />
+        </el-form-item>
+        <el-form-item label="分类" prop="categoryId">
+          <el-select v-model="editBox.form.categoryId" placeholder="请选择分类" style="width: 100%">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签" prop="tags" width="100%">
+          <el-select
+            v-model="editBox.form.tags"
+            multiple
+            :multiple-limit="3"
+            placeholder="请选择标签"
+            style="width: 100%"
+            @clear="editBox.form.tags = []"
+          >
+            <el-option
+              v-for="tag in tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="评论状态" prop="openComment">
+          <el-select v-model="editBox.form.openComment" style="width: 100%">
+            <el-option :value="1" label="允许评论" />
+            <el-option :value="0" label="不可评论" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="发布状态" prop="isPublish">
+          <el-select v-model="editBox.form.isPublish" style="width: 100%">
+            <el-option :value="1" label="已发布" />
+            <el-option :value="0" label="未发布" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="editArticleInfo">确 定</el-button>
+        <el-button @click="editBox.open=false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -195,7 +246,7 @@ import {
   deleteArticle,
   getArticlePage,
   openComment,
-  publishArticle
+  publishArticle, updateArticle
 } from '@/api/article'
 import { listCategory } from '@/api/category'
 import { listTag } from '@/api/tag'
@@ -206,7 +257,7 @@ export default {
     return {
       on: 1,
       off: 0,
-      auditStatusOptions: [
+      auditStatusOptions: [ // 审核状态
         {
           value: 0,
           type: 'info',
@@ -221,6 +272,8 @@ export default {
           label: '审核不通过'
         }
       ],
+      categories: [],
+      tags: [],
       articleData: [],
       totalPages: 0,
       total: 0, // 总数量
@@ -230,14 +283,22 @@ export default {
         pageSize: 10,
         keyword: '',
         tagsId: '', // 标签搜索
-        categoryId: '', // 分类搜索
+        categoryId: null, // 分类搜索
         isPublish: null, // 发布状态
         openComment: null, // 评论状态
         vipArticle: null, // vip文章
         auditStatus: null // 审核状态
-      }, // 搜索条件
-      categories: [],
-      tags: []
+      },
+      editBox: {
+        title: '',
+        open: false,
+        form: {},
+        rules: {
+          title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
+          categoryId: [{ required: true, message: '请选择分类', trigger: 'blur' }],
+          tags: [{ required: true, message: '请选择标签', trigger: 'change' }]
+        }
+      }
     }
   },
   created() {
@@ -256,6 +317,7 @@ export default {
         this.tags = res.data
       })
     },
+    // 分页
     handleSizeChange(val) {
       this.queryParams.pageSize = val
       this.fetchData()
@@ -286,6 +348,7 @@ export default {
         })
       }
     },
+    // 获取文章列表
     fetchData() {
       this.listLoading = true
       getArticlePage(this.queryParams).then(response => {
@@ -300,14 +363,17 @@ export default {
         this.listLoading = false
       })
     },
+    // 查询
     handleFind: function() {
       this.queryParams.currentPage = 1
       this.fetchData()
     },
-    resetForm() { // 重置
+    // 重置查询条件
+    resetQueryForm() {
       this.queryParams = {}
       this.fetchData()
     },
+    // 删除文章
     handleDelete(row) {
       const that = this
       this.$confirm('此操作将把文章删除, 是否继续?', '提示', {
@@ -326,14 +392,20 @@ export default {
           that.$message.info('已取消删除')
         })
     },
-    handleEdit(row) {
-      this.$router.push({
-        path: '/articlesManagement/', // 待跳转的页面URL
-        query: { id: row.id } // 跳转时传入的参数
-      })
+    // 打开文章编辑框
+    openEditBox(row) {
+      this.editBox.open = true
+      this.editBox.title = '编辑文章'
+      this.editBox.form = row
     },
-    handleAdd() {
-      this.$router.push({ path: '/articlesManagement/' })
+    // 编辑文章信息
+    editArticleInfo() {
+      const that = this
+      updateArticle(this.editBox.form).then(res => {
+        that.$message.success('修改成功')
+        that.editBox.open = false
+        that.fetchData()
+      })
     }
   }
 }

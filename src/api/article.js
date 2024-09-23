@@ -20,6 +20,15 @@ export function deleteArticle(data) {
   })
 }
 
+// 删除文章
+export function updateArticle(data) {
+  return request({
+    url: `${api}/update`,
+    method: 'put',
+    data
+  })
+}
+
 // 发布文章
 export const publishArticle = (data) => {
   return request({
